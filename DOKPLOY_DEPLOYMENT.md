@@ -37,7 +37,6 @@ REDIS_PASSWORD=<generate-random-string>
 
 # === REQUIRED - Your domain ===
 BASEROW_PUBLIC_URL=https://baserow.yourdomain.com
-TRAEFIK_HOST=baserow.yourdomain.com
 ```
 
 **To generate random secure keys:**
@@ -113,13 +112,13 @@ The deployment includes these services:
 - **redis**: Redis 6 for caching and queues
 - **volume-permissions-fixer**: Sets correct permissions for media files
 
-## Traefik Configuration
+## Routing
 
-The compose file includes Traefik labels that Dokploy will automatically configure:
+Dokploy's Traefik will automatically route traffic:
 
-- **Frontend**: All requests to your domain
-- **Backend**: Requests to `/api`, `/ws`, `/media` paths
-- **SSL**: Automatic Let's Encrypt certificates
+- **Port 3000** (web-frontend): Main application interface
+- **Port 8000** (backend): API endpoints at `/api`, websockets at `/ws`, media at `/media`
+- **SSL**: Automatic Let's Encrypt certificates via Dokploy
 - **WebSocket**: Enabled for real-time features
 
 ## Data Persistence

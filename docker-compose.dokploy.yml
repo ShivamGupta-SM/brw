@@ -15,8 +15,7 @@
 #
 ########################################################################################
 
-x-backend-variables:
-  &backend-variables
+x-backend-variables: &backend-variables
   SECRET_KEY: ${SECRET_KEY:?}
   BASEROW_JWT_SIGNING_KEY: ${BASEROW_JWT_SIGNING_KEY:-}
   DATABASE_PASSWORD: ${DATABASE_PASSWORD:?}
@@ -71,6 +70,8 @@ services:
   backend:
     image: baserow/backend:2.0.1
     restart: unless-stopped
+    ports:
+      - "8000:8000"
     environment:
       <<: *backend-variables
     depends_on:
@@ -78,17 +79,12 @@ services:
       - redis
     volumes:
       - media:/baserow/media
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.baserow-backend.rule=Host(`${TRAEFIK_HOST:-baserow.localhost}`) && PathPrefix(`/api`, `/ws`, `/media`)"
-      - "traefik.http.routers.baserow-backend.entrypoints=websecure"
-      - "traefik.http.routers.baserow-backend.tls=true"
-      - "traefik.http.routers.baserow-backend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.baserow-backend.loadbalancer.server.port=8000"
 
   web-frontend:
     image: baserow/web-frontend:2.0.1
     restart: unless-stopped
+    ports:
+      - "3000:3000"
     environment:
       BASEROW_PUBLIC_URL: ${BASEROW_PUBLIC_URL:?}
       PRIVATE_BACKEND_URL: http://backend:8000
@@ -98,14 +94,6 @@ services:
       BASEROW_FRONTEND_SAME_SITE_COOKIE: ${BASEROW_FRONTEND_SAME_SITE_COOKIE:-lax}
     depends_on:
       - backend
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.baserow-frontend.rule=Host(`${TRAEFIK_HOST:-baserow.localhost}`)"
-      - "traefik.http.routers.baserow-frontend.entrypoints=websecure"
-      - "traefik.http.routers.baserow-frontend.tls=true"
-      - "traefik.http.routers.baserow-frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.baserow-frontend.loadbalancer.server.port=3000"
-      - "traefik.http.routers.baserow-frontend.priority=1"
 
   celery:
     image: baserow/backend:2.0.1
@@ -114,7 +102,11 @@ services:
       <<: *backend-variables
     command: celery-worker
     healthcheck:
-      test: ["CMD-SHELL", "/baserow/backend/docker/docker-entrypoint.sh celery-worker-healthcheck"]
+      test:
+        [
+          "CMD-SHELL",
+          "/baserow/backend/docker/docker-entrypoint.sh celery-worker-healthcheck",
+        ]
     depends_on:
       - backend
     volumes:
@@ -127,7 +119,11 @@ services:
     environment:
       <<: *backend-variables
     healthcheck:
-      test: ["CMD-SHELL", "/baserow/backend/docker/docker-entrypoint.sh celery-exportworker-healthcheck"]
+      test:
+        [
+          "CMD-SHELL",
+          "/baserow/backend/docker/docker-entrypoint.sh celery-exportworker-healthcheck",
+        ]
     depends_on:
       - backend
     volumes:
@@ -153,7 +149,11 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?}
       POSTGRES_DB: ${DATABASE_NAME:-baserow}
     healthcheck:
-      test: ["CMD-SHELL", 'su postgres -c "pg_isready -U ${DATABASE_USER:-baserow}"']
+      test:
+        [
+          "CMD-SHELL",
+          'su postgres -c "pg_isready -U ${DATABASE_USER:-baserow}"',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
